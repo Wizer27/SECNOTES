@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import time
 
 load_dotenv()
+app  = FastAPI()
 
 def verify_signature(data:dict,signature:str,timestamp:str) -> bool:
     if int(time.time()) - int(timestamp) > 300:
@@ -27,3 +28,8 @@ async def safe_get(req:Request):
     if not api or not hmac.compare_digest(api,api_key):
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "invalid signature")
 
+
+@app.get("/")
+
+async def main():
+    return "SECNOTES API"
