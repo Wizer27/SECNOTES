@@ -33,5 +33,28 @@ async def create_table():
     async with async_engine.begin() as conn:
         await conn.run_sync(metadata_obj.create_all)
 
-asyncio.run(create_table())
+async def is_user_exists(username:str) -> bool:
+    async with AsyncSession(async_engine) as conn:
+        try:
+            stmt = select(table.c.username).where(table.c.username == username)
+            res = await conn.execute(stmt)
+            data_res = res.scalar_one_or_none()
+            return data_res is not None
+        except Exception as e:
+            raise Exception(f"Error : {e}")
+
+async def register(username:str,hash_psw:str) -> bool:
+    if await is_user_exists(username):
+        return False
+    async with AsyncSession(async_engine) as conn:
+        async with conn.begin():
+            try:
+                stmt = table.insert().values(
+                    username = username,
+                    hash_psw = hash_psw
+                )
+                await conn.execute(stmt)
+                return True
+            except Exception as e:  
+                raise Exception(f"Error : {e}")    
 
