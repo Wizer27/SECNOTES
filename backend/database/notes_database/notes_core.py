@@ -1,14 +1,15 @@
 from notes_models import metadata_obj,notes_table
-from sqlalchemy import select,delete,and_
+from sqlalchemy import select,delete,and_,exc
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from datetime import datetime,timedelta
-from typing import List
+from typing import List,Optional
 from sqlalchemy.orm import sessionmaker
 import asyncpg
 import os
 from dotenv import load_dotenv
 import asyncio
 import atexit
+
 
 load_dotenv()
 
@@ -31,4 +32,14 @@ AsyncSessionLocal = sessionmaker(
 async def create_table():
     async with async_engine.begin() as conn:
         await conn.run_sync(metadata_obj.create_all)
-     
+
+async def get_all_data() -> Optional[List]:
+    async with AsyncSession(async_engine) as conn:
+        try:
+            stmt = select(notes_table)
+            res = await conn.execute(stmt)
+            data = res.fetchall()
+            return data
+        except exc.SQLAlchemyError:
+            raise exc.SQLAlchemyError("Error")
+print(asyncio.run(get_all_data()))       
