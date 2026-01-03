@@ -1,4 +1,4 @@
-from models import table,metadata_obj
+from database.models import table,metadata_obj
 from sqlalchemy import text,select,and_
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from datetime import datetime,timedelta

@@ -1,4 +1,4 @@
-from fastapi import FastAPI,HTTPException,Depends,Request,status
+from fastapi import FastAPI,HTTPException,Depends,Request,status,Header
 from pydantic import BaseModel
 from typing import Optional
 import json
@@ -7,6 +7,7 @@ import hmac
 import os
 from dotenv import load_dotenv
 import time
+from database.core import register,login
 
 load_dotenv()
 app  = FastAPI()
@@ -33,3 +34,22 @@ async def safe_get(req:Request):
 
 async def main():
     return "SECNOTES API"
+
+class UsernameOnly(BaseModel):
+    username:str
+
+class ResgiterLogin(BaseModel):
+    username:str
+    hash_psw:str
+
+@app.post("/register")
+async def register_endpoint(req:ResgiterLogin,x_signature:str = Header(...),x_timestamp:str = Header(...)):
+    if not verify_signature(req.model_dump(),x_signature,x_timestamp):
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED,detail = "Invalid signature")
+    try:
+        res = await register(req.username,req.hash_psw)
+        if not res:
+            raise HTTPException(status_code = status.HTTP_409_CONFLICT,detail = "User already exists")
+    except Exception as e:
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,detail = f"Error : {e}")
+    

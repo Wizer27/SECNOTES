@@ -42,4 +42,4 @@ async def get_all_data() -> Optional[List]:
             return data
         except exc.SQLAlchemyError:
             raise exc.SQLAlchemyError("Error")
-print(asyncio.run(get_all_data()))       
+ 
