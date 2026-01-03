@@ -1,5 +1,6 @@
 from fastapi import FastAPI,HTTPException,Depends,Request,status,Header
 from pydantic import BaseModel
+import uvicorn
 from typing import Optional
 import json
 import hashlib
@@ -64,3 +65,5 @@ async def login_endpoint(req:RegiterLogin,x_signature:str = Header(...),x_timest
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,detail = f"Error : {e}")
 
+if __name__ == "__main__":
+    uvicorn.run(app,host = "0.0.0.0",port = 8080)
