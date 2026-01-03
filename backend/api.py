@@ -64,6 +64,6 @@ async def login_endpoint(req:RegiterLogin,x_signature:str = Header(...),x_timest
             raise HTTPException(status_code = status.HTTP_409_CONFLICT,detail = "User already exists")
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,detail = f"Error : {e}")
-
+#run
 if __name__ == "__main__":
     uvicorn.run(app,host = "0.0.0.0",port = 8080)
