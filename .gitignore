@@ -3,3 +3,4 @@ env
 /venv
 .env
 backend/database/.env
+backend/database/notes_database/.env
