@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import time
 from database.core import register,login
 
+#init
 load_dotenv()
 app  = FastAPI()
 
