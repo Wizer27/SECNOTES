@@ -46,8 +46,28 @@ async def get_all_data() -> Optional[List]:
 async def write_note(username:str,note:str,note_psw:str,time_to_die:str):
     async with AsyncSession(async_engine) as conn:
         async with conn.begin():
-            stmt = notes_table.insert().values(
-                username = username,
-                note = note,
-                password = note_psw
-            )
+            try:
+                stmt = notes_table.insert().values(
+                    username = username,
+                    note = note,
+                    password = note_psw,
+                    time_to_die = time_to_die
+                )
+                await conn.execute(stmt)
+            except exc.SQLAlchemyError:
+                raise exc.SQLAlchemyError("Error while executing")
+
+async def get_all_user_notes(username:str) -> Optional[List[str]]:
+    async with AsyncSession(async_engine) as conn:
+        try:
+            stmt = select(notes_table.c.note).where(notes_table.c.username == username)
+            res = await conn.execute(stmt)
+            data = res.fetchall()
+            if data is not None:
+                result = []
+                for sm in data:
+                    result.append(sm[0])
+                return result    
+            return []
+        except exc.SQLAlchemyError:
+            raise exc.SQLAlchemyError("Error while executing")                
