@@ -42,4 +42,12 @@ async def get_all_data() -> Optional[List]:
             return data
         except exc.SQLAlchemyError:
             raise exc.SQLAlchemyError("Error")
- 
+
+async def write_note(username:str,note:str,note_psw:str,time_to_die:str):
+    async with AsyncSession(async_engine) as conn:
+        async with conn.begin():
+            stmt = notes_table.insert().values(
+                username = username,
+                note = note,
+                password = note_psw
+            )
