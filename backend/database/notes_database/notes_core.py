@@ -151,6 +151,6 @@ async def try_acces_note(note_id:str,try_psw:str):
             if data is not None:
                 if data == try_psw:
                     return await get_note_text_by_id(note_id)
-            raise NameError("Went wrong")
+            return False
         except exc.SQLAlchemyError:
             raise exc.SQLAlchemyError("Error while executing")
