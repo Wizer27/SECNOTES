@@ -94,6 +94,8 @@ async def get_all_user_notes(username:str) -> dict:
             return {}
         except exc.SQLAlchemyError:
             raise exc.SQLAlchemyError("Error while executing") 
+        
+
 
 async def delete_note(note_id:str) -> bool:
     if not await is_notes_exists(note_id):
@@ -105,4 +107,50 @@ async def delete_note(note_id:str) -> bool:
                 await conn.execute(stmt)
             except exc.SQLAlchemyError:
                 raise exc.SQLAlchemyError("Error while executing")
+            
 
+async def delete_all_notes_that_need_to_be_deleted_now(time:str):
+    async with AsyncSession(async_engine) as conn:
+        try:
+            now = datetime.now()
+            formatted = now.strftime("%Y-%m-%d %H:%M")
+            stmt = select(notes_table.id).where(notes_table.c.time_to_die == formatted)
+            res = await conn.execute(stmt)
+            data = res.fetchall()
+            id_s_to_delete = []
+            if data is not None:
+                for dt in data:
+                    id_s_to_delete.append(str(dt[0]))
+                for note_id in id_s_to_delete:
+                    await delete_note(note_id)        
+        except exc.SQLAlchemyError as conn:
+            raise exc.SQLAlchemyError("Error while executing")
+        
+async def get_note_text_by_id(note_id:str) -> str:
+    if await is_notes_exists(note_id):
+        async with AsyncSession(async_engine) as conn:
+            try:
+                stmt = select(notes_table.c.note).where(notes_table.c.id == note_id)
+                res = await conn.execute(stmt)
+                data = res.scalar_one_or_none()
+                if data is not None:
+                    return str(data)
+                return ""
+            except exc.SQLAlchemyError:
+                raise exc.SQLAlchemyError("Error while executing")  
+    raise NameError("Note not found")          
+
+async def try_acces_note(note_id:str,try_psw:str):
+    if not await is_notes_exists(note_id):
+        return False
+    async with AsyncSession(async_engine) as conn:
+        try:
+            stmt = select(notes_table.c.passwrord).where(notes_table.c.id == note_id)
+            res = await conn.execute(stmt)
+            data = res.scalar_one_or_none()
+            if data is not None:
+                if data == try_psw:
+                    return await get_note_text_by_id(note_id)
+            raise NameError("Went wrong")
+        except exc.SQLAlchemyError:
+            raise exc.SQLAlchemyError("Error while executing")
