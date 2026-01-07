@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 import asyncio
 import atexit
+import uuid
 
 
 load_dotenv()
@@ -33,6 +34,16 @@ async def create_table():
     async with async_engine.begin() as conn:
         await conn.run_sync(metadata_obj.create_all)
 
+async def is_notes_exists(note_id:str) -> bool:
+    async with AsyncSession(async_engine) as conn:
+        try:
+            stmt = select(notes_table.id).where(notes_table.id == note_id)
+            res = await conn.execute(stmt)
+            result = res.scalar_one_or_none()
+            return result is not None
+        except exc.SQLAlchemyError:
+            raise exc.SQLAlchemyError("Error while executing")
+
 async def get_all_data() -> Optional[List]:
     async with AsyncSession(async_engine) as conn:
         try:
@@ -51,23 +62,47 @@ async def write_note(username:str,note:str,note_psw:str,time_to_die:str):
                     username = username,
                     note = note,
                     password = note_psw,
-                    time_to_die = time_to_die
+                    time_to_die = time_to_die,
+                    id = str(uuid.uuid4())
                 )
                 await conn.execute(stmt)
             except exc.SQLAlchemyError:
                 raise exc.SQLAlchemyError("Error while executing")
 
-async def get_all_user_notes(username:str) -> Optional[List[str]]:
+async def get_all_user_notes(username:str) -> dict:
     async with AsyncSession(async_engine) as conn:
         try:
             stmt = select(notes_table.c.note).where(notes_table.c.username == username)
             res = await conn.execute(stmt)
             data = res.fetchall()
             if data is not None:
-                result = []
+                notes = []
                 for sm in data:
-                    result.append(sm[0])
-                return result    
-            return []
+                    notes.append(sm[0])
+                new_stmt = select(notes_table.c.id).where(notes_table.c.username == username)
+                res2 = await conn.execute(new_stmt)
+                data2 = res2.fetchall()
+                id_s = []
+                for dt in data2:
+                    id_s.append(dt[0])
+                result = {}    
+                if notes != [] and id_s != []:
+                    for note_id in id_s:
+                        for note in notes:
+                            result[note_id] = note
+                return result            
+            return {}
         except exc.SQLAlchemyError:
-            raise exc.SQLAlchemyError("Error while executing")                
+            raise exc.SQLAlchemyError("Error while executing") 
+
+async def delete_note(note_id:str) -> bool:
+    if not await is_notes_exists(note_id):
+        return False
+    async with AsyncSession(async_engine) as conn:
+        async with conn.begin():
+            try:
+                stmt = notes_table.delete(notes_table).where(notes_table.c.id == note_id)
+                await conn.execute(stmt)
+            except exc.SQLAlchemyError:
+                raise exc.SQLAlchemyError("Error while executing")
+
