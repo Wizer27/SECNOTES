@@ -1,4 +1,4 @@
-from notes_models import metadata_obj,notes_table
+from database.notes_database.notes_models import metadata_obj,notes_table
 from sqlalchemy import select,delete,and_,exc
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from datetime import datetime,timedelta
@@ -109,7 +109,7 @@ async def delete_note(note_id:str) -> bool:
                 raise exc.SQLAlchemyError("Error while executing")
             
 
-async def delete_all_notes_that_need_to_be_deleted_now(time:str):
+async def delete_all_notes_that_need_to_be_deleted_now():
     async with AsyncSession(async_engine) as conn:
         try:
             now = datetime.now()

@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 import time
 from database.core import register,login
+import database.notes_database.notes_core as notes_core
 
 #init
 load_dotenv()
@@ -65,6 +66,22 @@ async def login_endpoint(req:RegiterLogin,x_signature:str = Header(...),x_timest
             raise HTTPException(status_code = status.HTTP_409_CONFLICT,detail = "User already exists")
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,detail = f"Error : {e}")
+
+class WriteNote(BaseModel):
+    username:str
+    note:str
+    psw:str
+    time_to_die:str
+
+@app.post("/write")
+async def write_note_api(req:WriteNote,x_signature:str = Header(...),x_timestamp:str = Header(...)):
+    if not verify_signature(req.model_dump(),x_signature,x_timestamp):
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED,detail = "Invalid signature")
+    try:
+        await notes_core.write_note(req.username,req.note,req.psw,req.time_to_die)
+    except Exception as e:
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,detail = f"Error : {e}")
+
 #run
 if __name__ == "__main__":
     uvicorn.run(app,host = "0.0.0.0",port = 8080)
