@@ -82,6 +82,20 @@ async def write_note_api(req:WriteNote,x_signature:str = Header(...),x_timestamp
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,detail = f"Error : {e}")
 
+class JustNoteId(BaseModel):
+    note_id:str
+
+@app.post("/delete")
+async def delete_note_api(req:JustNoteId,x_signature:str = Header(...),x_timestamp:str = Header(...)):
+    if not verify_signature(req.model_dump(),x_signature,x_timestamp):
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED,detail = "Invalid signature")
+    try:
+        result:bool = await notes_core.delete_note(req.note_id)
+        if not result:
+            raise HTTPException(status_code = status.HTTP_409_CONFLICT,detail = "Note not found")
+    except Exception as e:
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,detail = f"Error : {e}")
+
 #run
 if __name__ == "__main__":
     uvicorn.run(app,host = "0.0.0.0",port = 8080)
